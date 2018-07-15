@@ -57,6 +57,7 @@ function hasDeletedProperties(source, target) {
     return !!found;
 }
 
+
 module.exports = class Reducer {
     constructor(idprop, storage = new Storage()) {
         this.storage = storage;
@@ -94,7 +95,13 @@ module.exports = class Reducer {
         return [true, diff];
     }
 
-    restore() {
-        throw new Error('not implemented');
+    restore(diff) {
+        if (typeof diff != 'object' && diff !== null) throw new Error('non null object excpected');
+        const key = diff[this.idprop];
+        if (!diff.hasOwnProperty(this.idprop) || !this.storage.has(key)) {
+            return [false, null]; //can't find key, return null
+        }
+        let source = this.storage.get(key);
+        return [true, Object.assign(source, diff)];
     }
 }

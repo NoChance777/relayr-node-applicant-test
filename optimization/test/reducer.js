@@ -60,9 +60,10 @@ describe("reducer tests", function () {
             let target = Object.assign({}, source);
             target.property2 = 0;
             target.property3 = {
-                property5: ["a", "b", "c"]
+                property5: ["a", "b"]
             };
             let [saved, diff] = reducer.reduce(target);
+            console.log(diff);
             assert.ok(saved);
             assert.equal(diff.property2, target.property2);
             assert.deepEqual(diff.property3, target.property3);
@@ -86,13 +87,24 @@ describe("reducer tests", function () {
             let target = Object.assign({}, source);
             target.property3 = {
                 ...target.property3,
-                property6 : "new property"
+                property6: "new property"
             };
             let [saved, diff] = reducer.reduce(target);
             assert.ok(saved);
             assert.equal(diff.property3, target.property3);
             assert.equal(Object.keys(diff).length, 2); //one new property + id
             done();
+        });
+    });
+    describe("should restore object", function () {
+        it("#restore", function () {
+            let reducer = new Reducer("id");
+            reducer.store(source);
+            let diff = { property2: 0.123456, id: source.id };
+            let [restored, target] = reducer.restore(diff)
+            assert.ok(restored);
+            assert.equal(diff.property2, target.property2);
+            assert.ok(Object.keys(source).sort(), Object.keys(target).sort());
         });
     });
 });
