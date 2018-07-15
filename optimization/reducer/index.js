@@ -1,6 +1,7 @@
+const _ = require('lodash');
 let Storage = require('./storage');
 
-function areArraysEqual(array1, array2) {
+/* function areArraysEqual(array1, array2) {
     if (!array2) return false;
     if (array1.length != array2.length) return false;
 
@@ -50,11 +51,33 @@ function compare(source, target) {
         }
     }
     return result;
-}
+} */
 
-function hasDeletedProperties(source, target) {
-    let found = Object.keys(source).find(propName => !target.hasOwnProperty(propName));
-    return !!found;
+function difference(base, object) {
+    function changes(base, object) {
+        return _.transform(object, function (result, value, key) {
+            if (!_.isEqual(value, base[key])) {
+                result[key] = _.isPlainObject(value) && _.isPlainObject(base[key]) ?
+                    changes(base[key], value) :
+                    value;
+            }
+        });
+    }
+    return changes(base, object);
+}
+function hasDeletedProperties(base, object) {
+    function find(base, object) {
+        for (const key in base) {
+            if (_.isUndefined(object[key])
+                || (_.isPlainObject(base[key]) &&
+                    _.isPlainObject(object[key]) &&
+                    find(base[key], object[key]))) return true;
+
+        }
+        return false;
+    }
+    let found = Object.keys(base).find(propName => !object.hasOwnProperty(propName));
+    return find(base, object);
 }
 
 
@@ -67,7 +90,7 @@ module.exports = class Reducer {
     store(target) {
         const key = target[this.idprop];
         this.storage.set(key, target); //save in storage
-        return [true, target];
+        return target;
     }
 
     /**
@@ -83,13 +106,12 @@ module.exports = class Reducer {
         }
         const key = target[this.idprop];
         if (!this.storage.has(key))
-            return this.store(target);
+            return [false, this.store(target)];
 
         let source = this.storage.get(key);
-        if (hasDeletedProperties(source, target)) {
-            return this.store(target);
-        }
-        let diff = compare(source, target);
+        if (hasDeletedProperties(source, target)) return [false, this.store(target)];
+
+        let diff = difference(source, target);
         diff[this.idprop] = key; //restore id prop
         this.store(target);
         return [true, diff];
