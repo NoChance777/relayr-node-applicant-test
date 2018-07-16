@@ -39,7 +39,7 @@ describe("reducer tests", function () {
         it("#reduce - first occurrence", function (done) {
             let reducer = new Reducer("id");
             let [reduced, diff] = reducer.reduce(base);
-            assert.ok(!reduced);
+            assert.ok(reduced); // technically object isn't reduced, but stored
             assert.deepEqual(diff, base);
             done();
         });
