@@ -99,7 +99,17 @@ describe("reducer tests", function () {
         });
     });
     describe("should restore object", function () {
-        it("#restore", function () {
+        it("#restore - try to restore absent object", function () {
+            let reducer = new Reducer("id");
+            let diff = {
+                property1: "something new",
+                id: base.id,
+            };
+            let [isRestored, target] = reducer.restore(diff)
+            assert.ok(!isRestored);
+            assert.equal(diff, target);
+        });
+        it("#restore - normal", function () {
             let reducer = new Reducer("id");
             reducer.store(base);
             let diff = {
