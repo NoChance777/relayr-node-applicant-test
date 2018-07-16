@@ -64,8 +64,8 @@ describe("reducer tests", function () {
                 property4: "inner-string",
                 property5: ["a", "b", "c", "d"]
             };
-            let [saved, diff] = reducer.reduce(target);
-            assert.ok(saved);
+            let [isSaved, diff] = reducer.reduce(target);
+            assert.ok(isSaved);
             assert.equal(diff.property2, target.property2);
             assert.equal(diff.property3.property5, target.property3.property5);
             assert.equal(Object.keys(diff).length, 3); //two changed properties + id
@@ -77,8 +77,8 @@ describe("reducer tests", function () {
             reducer.store(base);
             let target1 = Object.assign({}, base);
             target1.property6 = "new property";
-            let [saved, diff] = reducer.reduce(target1);
-            assert.ok(saved);
+            let [isSaved, diff] = reducer.reduce(target1);
+            assert.ok(isSaved);
             assert.equal(diff.property6, target1.property6);
             assert.equal(Object.keys(diff).length, 2); //one new property + id
             done();
@@ -91,8 +91,8 @@ describe("reducer tests", function () {
                 ...target.property3,
                 property6: "new property"
             };
-            let [saved, diff] = reducer.reduce(target);
-            assert.ok(saved);
+            let [isSaved, diff] = reducer.reduce(target);
+            assert.ok(isSaved);
             assert.equal(diff.property3.property6, target.property3.property6);
             assert.equal(Object.keys(diff).length, 2); //one new property + id
             done();
@@ -102,11 +102,18 @@ describe("reducer tests", function () {
         it("#restore", function () {
             let reducer = new Reducer("id");
             reducer.store(base);
-            let diff = { property2: 0.123456, id: base.id };
-            let [restored, target] = reducer.restore(diff)
-            assert.ok(restored);
+            let diff = {
+                property2: 0.123456,
+                id: base.id,
+                property3: {
+                    property5: ["a", "b", "c", "d"]
+                }
+            };
+            let [isRestored, target] = reducer.restore(diff)
+            assert.ok(isRestored);
             assert.equal(diff.property2, target.property2);
-            assert.ok(Object.keys(base).sort(), Object.keys(target).sort());
+            assert.deepEqual(diff.property3.property5, target.property3.property5);
+            assert.deepEqual(Object.keys(base).sort(), Object.keys(target).sort());
         });
     });
 });

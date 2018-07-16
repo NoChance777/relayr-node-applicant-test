@@ -1,58 +1,6 @@
 const _ = require('lodash');
 let Storage = require('./storage');
 
-/* function areArraysEqual(array1, array2) {
-    if (!array2) return false;
-    if (array1.length != array2.length) return false;
-
-    for (var i = 0, l = array1.length; i < l; i++) {
-        if (array1[i] instanceof Array && array2[i] instanceof Array) {
-            if (!areArraysEqual(array1[i], array2[i])) return false;
-        }
-        else if (array1[i] != array2[i]) {
-            // warning - two different object instances will never be equal: {x:20} != {x:20}
-            return false;
-        }
-    }
-    return true;
-}
-function compare(source, target) {
-    let result = {};
-    for (let propName in target) {
-        if (target.hasOwnProperty(propName) != source.hasOwnProperty(propName)) {
-            result[propName] = target[propName];
-            continue;
-        }
-        // check instance type
-        if (typeof target[propName] != typeof source[propName]) {
-            // different types => not equal
-            result[propName] = target[propName];
-            continue;
-        }
-        if (target[propName] instanceof Array) {
-            // recurse into the nested arrays
-            if (!areArraysEqual(target[propName], source[propName]))
-                result[propName] = target[propName];
-            continue;
-        }
-        if (target[propName] instanceof Object) {
-            // recurse into another objects
-            if (hasDeletedProperties(source[propName], target[propName])
-                || Object.keys(
-                    compare(source[propName], target[propName])
-                ).length > 0) {
-                result[propName] = target[propName]; // save whole nested object, but it also can be reduced
-            }
-            continue;
-        }
-        // normal value comparison for strings and numbers
-        if (target[propName] != source[propName]) {
-            result[propName] = target[propName];
-        }
-    }
-    return result;
-} */
-
 function difference(base, object) {
     function changes(base, object) {
         return _.transform(object, function (result, value, key) {
@@ -95,35 +43,45 @@ module.exports = class Reducer {
 
     /**
      * Save object and returns only changed properties 
-     * @param {object} target - any object with specified key
+     * @param {object} obj - any object with specified key
      * @returns {Array} array with of two values, first one shows the target object was stored,
      * second - differences with previously stored object with same key
      */
-    reduce(target) {
-        if (typeof target != 'object' && target !== null) throw new Error('non null object excpected');
-        if (!target.hasOwnProperty(this.idprop)) {
-            return [false, target]; //can't find key, return object as is
+    reduce(obj) {
+        if (typeof obj != 'object' && obj !== null) throw new Error('non null object excpected');
+        if (!obj.hasOwnProperty(this.idprop)) {
+            return [false, obj]; //can't find key, return object as is
         }
-        const key = target[this.idprop];
+        const key = obj[this.idprop];
         if (!this.storage.has(key))
-            return [false, this.store(target)];
+            return [false, this.store(obj)];
 
         let source = this.storage.get(key);
-        if (hasDeletedProperties(source, target)) return [false, this.store(target)];
+        if (hasDeletedProperties(source, obj)) return [false, this.store(obj)];
 
-        let diff = difference(source, target);
+        let diff = difference(source, obj);
         diff[this.idprop] = key; //restore id prop
-        this.store(target);
+        this.store(obj);
         return [true, diff];
     }
 
-    restore(diff) {
-        if (typeof diff != 'object' && diff !== null) throw new Error('non null object excpected');
-        const key = diff[this.idprop];
-        if (!diff.hasOwnProperty(this.idprop) || !this.storage.has(key)) {
-            return [false, null]; //can't find key, return null
+    /**
+     * Restore object
+     * @param {obj} obj - object with differences with previously stored value
+     * @returns {Array} array with of two values, first one shows the object was successfully restored,
+     * second - the restored object
+     */
+    restore(obj) {
+        if (typeof obj != 'object' && obj !== null) throw new Error('non null object excpected');
+        const key = obj[this.idprop];
+        if (!obj.hasOwnProperty(this.idprop) || !this.storage.has(key)) {
+            return [false, obj]; //can't find key in object or stored object in the storage, return object as is
         }
-        let source = this.storage.get(key);
-        return [true, Object.assign(source, diff)];
+        /*if (!reduced) { //received entire object, store it and return
+             return [false, this.store(obj)];
+         }*/
+        let stored = this.storage.get(key);
+        let restored = _.merge(stored, obj)
+        return [true, this.store(restored)];
     }
 }
