@@ -1,5 +1,5 @@
 
-# Solition 
+# Solution 
 The idea is reduce amount of data transferring between sender and receiver, we can achieve this by caching device state in both parts of application and send only that data was changed. I know about extra memory consumption, but if a number of devices is limited, it's worth it. Also we can add compression, but better way to do it with a reverse proxy, for example, NGNIX
 
 # Backend Developer Job Applicant Test - Node.js
